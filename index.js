@@ -1,10 +1,10 @@
 import inquirer from "inquirer";
-import { actionQuestions } from "./lib/questions.js";
 import mysql2 from "mysql2";
 
+import { actionQuestions, employeeQuestions } from "./lib/questions.js";
 import SECRETS from "./secrets.js";
 
-const inqure = inquirer.prompt;
+const prompt = inquirer.prompt;
 
 const SQL_CONFIG = {
     host: 'localhost',
@@ -13,51 +13,62 @@ const SQL_CONFIG = {
     database: 'employee_tracker'
 }
 
-async function displayTable(table) {
-    const db = mysql2.createConnection(SQL_CONFIG);
-    
-    db.query(`SELECT * FROM ${table}`, (err, results) => {
-        console.table(results);
-        console.log("\n\n\n\n\n\n\n\n") // TODO: Fix this buffer thing
-    });
-    
-    db.end();
+const displayTable = (_err, results) => {
+    console.log("\n");
+    console.table(results);
 }
 
-async function init() {
-    let response = await inqure(actionQuestions);
-    let action = response.action;
- 
-    while (action != "Exit") {
-        switch (action) {
-            case "View all Departments":
-                displayTable("department");
-                break;
-            case "View all Roles":
-                displayTable("role");
-                break;
-            case "View all Employees":
-                displayTable("employee");
-                break;
-            case "Add a Department":
-                console.log("Not yet implmented...") // TODO: Implement this
-                break;
-            case "Add a Role":
-                console.log("Not yet implmented...") // TODO: Implement this
-                break;
-            case "Add an Employee":
-                console.log("Not yet implmented...") // TODO: Implement this
-                break;
-            case "Update an Employee Role":
-                console.log("Not yet implmented...") // TODO: Implement this
-                break;
-            default:
-                break;
-        }
+// Display a table after querying it
+// TODO: Break this into two functions, one that async returns a query, and another that renders the data
+const getTable = (table, callback) => {
+    const connection = mysql2.createConnection(SQL_CONFIG);
+    
+    connection.query(`SELECT * FROM ${table}`, (_err, results) => {
+        connection.end();
 
-        response = await inqure(actionQuestions);
-        action = response.action;
-    };
+        callback(_err, results);
+    });
+}
+
+// TODO: Rename this function
+// Perform the "main menu" query to identify the chosen user action
+const performAction = async (action) => {
+    switch (action) {
+        case "View all Departments":
+            getTable("department", displayTable);
+            break;
+        case "View all Roles":
+            getTable("role", displayTable);
+            break;
+        case "View all Employees":
+            getTable("employee", displayTable);
+            break;
+        case "Add a Department":
+            console.log("Not yet implmented..."); // TODO: Implement this
+            break;
+        case "Add a Role":
+            console.log("Not yet implmented..."); // TODO: Implement this
+            break;
+        case "Add an Employee":
+            console.log("Not yet implmented..."); // TODO: Implement this
+            // let employeeData = await prompt(employeeQuestions);
+            // console.log(employeeData);
+            break;
+        case "Update an Employee Role":
+            console.log("Not yet implmented..."); // TODO: Implement this
+            break;
+        default:
+            break;
+    }
+}
+
+ const init = async () => {
+    let action;
+
+    while (action != "Exit") {
+        action = (await prompt(actionQuestions)).action;
+        performAction(action);
+    }
 }
 
 init();
