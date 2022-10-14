@@ -1,25 +1,11 @@
 import inquirer from "inquirer";
+import { actionQuestions } from "./lib/questions.js";
 
-async function getAction() {
-    return await inquirer.prompt({
-        name: "action",
-        type: "list",
-        message: "Welcome! What would you like to do?",
-        choices: [
-            "View all Departments",
-            "View all Roles",
-            "View all Employees",
-            "Add a Department",
-            "Add a Role",
-            "Add an Employee",
-            "Update an Employee Role",
-        ]
-    })
-}
+const inqure = inquirer.prompt;
 
 async function init() {
-    let action = await getAction();
-    
+    let action = await inqure(actionQuestions);
+
     console.log(action);
 }
 
