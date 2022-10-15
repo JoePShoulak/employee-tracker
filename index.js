@@ -7,15 +7,19 @@ const prompt = inquirer.prompt;
 const sql = new JoeSQL();
 
 /* == HELPER FUNCTIONS == */
-const filter = (column, id) => {
-    return {
-        param: `${column}_id`,
+const createFilter = (id, column=null) => {
+    let filterObj = {
         value: id
     }
+
+    filterObj.param = column ? `${column}_id` : "id";
+
+    return filterObj;
 }
 
-const join = (secondTable, firstID, secondID) => {
+const createJoin = (firstTable, secondTable, firstID, secondID) => {
     return {
+        firstTable: firstTable,
         secondTable: secondTable,
         firstID: firstID,
         secondID: secondID
@@ -61,11 +65,11 @@ const performAction = async (action) => {
             break;
         case "View Employees by Manager":
             id = (await prompt(Questions.employeesByManager)).id;
-            sql.displayTable("employee", null, filter("manager", id));
+            sql.displayTable("employee", [], createFilter(id, "manager"));
             break;
         case "View Employees by Department":
             id = (await prompt(Questions.employeesByDepartment)).id;
-            sql.displayTable("employee", join("role", "role_id", "id"), filter("department", id));
+            sql.displayTable("employee", [createJoin("employee", "role", "role_id", "id")], createFilter(id, "department"));
             break;
         case "Add a Department":
             let newDepartment = await prompt(Questions.newDepartment);
@@ -79,21 +83,28 @@ const performAction = async (action) => {
             let newEmployee = await prompt(Questions.newEmployee);
             sql.insert("employee", newEmployee);
             break;
+        case "Update an Employee":
+            let updateInfo = await prompt(Questions.updateEmployee);
+            sql.update("employee", updateInfo.id, parseChanges(updateInfo));
+            break;
         case "Delete a Department":
-            id = await prompt(Questions.deleteDepartment);
+            id = (await prompt(Questions.deleteDepartment)).id;
             sql.delete("department", id);
             break;
         case "Delete a Role":
-            id = await prompt(Questions.deleteRole);
+            id = (await prompt(Questions.deleteRole)).id;
             sql.delete("role", id);
             break;
         case "Delete an Employee":
             id = (await prompt(Questions.deleteEmployee)).id;
             sql.delete("employee", id);
             break;
-        case "Update an Employee":
-            let updateInfo = await prompt(Questions.updateEmployee);
-            sql.update("employee", updateInfo.id, parseChanges(updateInfo));
+        case "View Budget of a Department":
+            id = (await prompt(Questions.departmentBudget)).id;
+            sql.displaySum("employee", "salary", createFilter(id, "department"), [
+                createJoin("employee", "role", "role_id", "id"),
+                createJoin("role", "department", "department_id", "id")
+            ]);
             break;
         default:
             break;
