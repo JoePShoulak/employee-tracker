@@ -6,6 +6,23 @@ import Questions from "./lib/questions.js";
 const prompt = inquirer.prompt;
 const sql = new JoeSQL();
 
+/* == HELPER FUNCTIONS == */
+// Manager constructor
+const filter = (column, id) => {
+    return {
+        param: `${column}_id`,
+        value: id
+    }
+}
+
+const join = (secondTable, firstID, secondID) => {
+    return {
+        secondTable: secondTable,
+        firstID: firstID,
+        secondID: secondID
+    }
+}
+
 // Perform the "main menu" query to identify the chosen user action
 const performAction = async (action) => {
     switch (action) {
@@ -17,6 +34,15 @@ const performAction = async (action) => {
             break;
         case "View all Employees":
             sql.displayTable("employee");
+            break;
+        case "View Employees by Manager":
+            let mid = (await prompt(Questions.whichManager)).id;
+            console.log(mid);
+            sql.displayTable("employee", null, filter("manager", mid));
+            break;
+        case "View Employees by Department":
+            const mID = (await prompt(Questions.whichDepartment)).id;
+            sql.displayTable("employee", join("role", "role_id", "id"), filter("department", mID));
             break;
         case "Add a Department":
             sql.insert("department", await prompt(Questions.newDepartment));
