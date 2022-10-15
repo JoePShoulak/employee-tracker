@@ -3,50 +3,14 @@ import inquirer from "inquirer";
 import JoeSQL from "./lib/JoeSQL.js";
 import Questions from "./lib/questions.js";
 
+import { createFilter, createJoin, parseChanges } from "./lib/indexHelper.js";
+
 const prompt = inquirer.prompt;
 const sql = new JoeSQL();
 
-/* == HELPER FUNCTIONS == */
-const createFilter = (id, column=null) => {
-    let filterObj = {
-        value: id
-    }
-
-    filterObj.param = column ? `${column}_id` : "id";
-
-    return filterObj;
-}
-
-const createJoin = (firstTable, secondTable, firstID, secondID) => {
-    return {
-        firstTable: firstTable,
-        secondTable: secondTable,
-        firstID: firstID,
-        secondID: secondID
-    }
-}
-
-const parseChanges = (updateInfo) => {
-    let changes = [];
-
-    const DNU = "do not update";
-
-
-    if (updateInfo.role != DNU) {
-        changes = [...changes, {
-            column: "role_id",
-            value: updateInfo.role
-        }];
-    }
-
-    if (updateInfo.manager != DNU) {
-        changes = [...changes, {
-            column: "manager_id",
-            value: updateInfo.manager
-        }];
-    }
-
-    return changes;
+const joins = {
+    employeeRole: createJoin("employee", "role", "role_id", "id"),
+    roleDepartment: createJoin("role", "department", "department_id", "id")
 }
 
 // Perform the "main menu" query to identify the chosen user action
@@ -65,11 +29,11 @@ const performAction = async (action) => {
             break;
         case "View Employees by Manager":
             id = (await prompt(Questions.employeesByManager)).id;
-            sql.displayTable("employee", [], createFilter(id, "manager"));
+            sql.displayTable("employee", createFilter(id, "manager"));
             break;
         case "View Employees by Department":
             id = (await prompt(Questions.employeesByDepartment)).id;
-            sql.displayTable("employee", [createJoin("employee", "role", "role_id", "id")], createFilter(id, "department"));
+            sql.displayTable("employee", createFilter(id, "department"), [joins.employeeRole]);
             break;
         case "Add a Department":
             let newDepartment = await prompt(Questions.newDepartment);
@@ -101,10 +65,7 @@ const performAction = async (action) => {
             break;
         case "View Budget of a Department":
             id = (await prompt(Questions.departmentBudget)).id;
-            sql.displaySum("employee", "salary", createFilter(id, "department"), [
-                createJoin("employee", "role", "role_id", "id"),
-                createJoin("role", "department", "department_id", "id")
-            ]);
+            sql.displaySum("employee", "salary", createFilter(id, "department"), [ joins.employeeRole, joins.roleDepartment ]);
             break;
         default:
             break;
