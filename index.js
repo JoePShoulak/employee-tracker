@@ -7,7 +7,6 @@ const prompt = inquirer.prompt;
 const sql = new JoeSQL();
 
 /* == HELPER FUNCTIONS == */
-// Manager constructor
 const filter = (column, id) => {
     return {
         param: `${column}_id`,
@@ -23,8 +22,33 @@ const join = (secondTable, firstID, secondID) => {
     }
 }
 
+const parseChanges = (updateInfo) => {
+    let changes = [];
+
+    const DNU = "do not update";
+
+
+    if (updateInfo.role != DNU) {
+        changes = [...changes, {
+            column: "role_id",
+            value: updateInfo.role
+        }];
+    }
+
+    if (updateInfo.manager != DNU) {
+        changes = [...changes, {
+            column: "manager_id",
+            value: updateInfo.manager
+        }];
+    }
+
+    return changes;
+}
+
 // Perform the "main menu" query to identify the chosen user action
 const performAction = async (action) => {
+    let id;
+
     switch (action) {
         case "View all Departments":
             sql.displayTable("department");
@@ -36,45 +60,40 @@ const performAction = async (action) => {
             sql.displayTable("employee");
             break;
         case "View Employees by Manager":
-            let mid = (await prompt(Questions.whichManager)).id;
-            console.log(mid);
-            sql.displayTable("employee", null, filter("manager", mid));
+            id = (await prompt(Questions.employeesByManager)).id;
+            sql.displayTable("employee", null, filter("manager", id));
             break;
         case "View Employees by Department":
-            const mID = (await prompt(Questions.whichDepartment)).id;
-            sql.displayTable("employee", join("role", "role_id", "id"), filter("department", mID));
+            id = (await prompt(Questions.employeesByDepartment)).id;
+            sql.displayTable("employee", join("role", "role_id", "id"), filter("department", id));
             break;
         case "Add a Department":
-            sql.insert("department", await prompt(Questions.newDepartment));
+            let newDepartment = await prompt(Questions.newDepartment);
+            sql.insert("department", newDepartment);
             break;
         case "Add a Role":
-            sql.insert("role", await prompt(Questions.newRole));
+            let newRole = await prompt(Questions.newRole);
+            sql.insert("role", newRole);
             break;
         case "Add an Employee":
-            sql.insert("employee", await prompt(Questions.newEmployee));
+            let newEmployee = await prompt(Questions.newEmployee);
+            sql.insert("employee", newEmployee);
+            break;
+        case "Delete a Department":
+            id = await prompt(Questions.deleteDepartment);
+            sql.delete("department", id);
+            break;
+        case "Delete a Role":
+            id = await prompt(Questions.deleteRole);
+            sql.delete("role", id);
+            break;
+        case "Delete an Employee":
+            id = (await prompt(Questions.deleteEmployee)).id;
+            sql.delete("employee", id);
             break;
         case "Update an Employee":
             let updateInfo = await prompt(Questions.updateEmployee);
-
-            const DNU = "do not update";
-
-            let changes = [];
-
-            if (updateInfo.role != DNU) {
-                changes = [...changes, {
-                    column: "role_id",
-                    value: updateInfo.role
-                }];
-            }
-
-            if (updateInfo.manager != DNU) {
-                changes = [...changes, {
-                    column: "manager_id",
-                    value: updateInfo.manager
-                }];
-            }
-
-            sql.update("employee", updateInfo.id, changes);
+            sql.update("employee", updateInfo.id, parseChanges(updateInfo));
             break;
         default:
             break;
