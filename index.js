@@ -27,15 +27,28 @@ const performAction = async (action) => {
         case "Add an Employee":
             sql.insert("employee", await prompt(Questions.newEmployee));
             break;
-        case "Update an Employee Role":
+        case "Update an Employee":
             let updateInfo = await prompt(Questions.updateEmployee);
 
-            let change = {
-                column: "role_id",
-                value: updateInfo.role
-            };
+            const DNU = "do not update";
 
-            sql.update("employee", updateInfo.id, change);
+            let changes = [];
+
+            if (updateInfo.role != DNU) {
+                changes = [...changes, {
+                    column: "role_id",
+                    value: updateInfo.role
+                }];
+            }
+
+            if (updateInfo.manager != DNU) {
+                changes = [...changes, {
+                    column: "manager_id",
+                    value: updateInfo.manager
+                }];
+            }
+
+            sql.update("employee", updateInfo.id, changes);
             break;
         default:
             break;
