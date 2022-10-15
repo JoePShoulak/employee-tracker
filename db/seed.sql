@@ -1,4 +1,5 @@
 /* ==== SEED FILE ==== */
+/* ==== SEED FILE ==== */
 USE employee_tracker;
 
 INSERT INTO department
