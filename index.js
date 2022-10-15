@@ -1,33 +1,23 @@
 import inquirer from "inquirer";
-import mysql2 from "mysql2";
 
-import { actionQuestions, employeeQuestions } from "./lib/questions.js";
-import SECRETS from "./secrets.js";
+import JoeSQL from "./lib/JoeSQL.js";
+import Questions from "./lib/questions.js";
 
 const prompt = inquirer.prompt;
+const sql = new JoeSQL();
 
-const SQL_CONFIG = {
-    host: 'localhost',
-    user: 'root',
-    password: SECRETS.SQL,
-    database: 'employee_tracker'
-}
+/* == HELPERS == */
+// Add a new object to the related table
+const addNew = async (table) => {
+    // Get the data from the user via Inquirer
+    let objectData = await prompt(Questions[table]);
 
-const displayTable = (_err, results) => {
-    console.log("\n");
-    console.table(results);
-}
+    // Update the object with a new ID that isn't in use
+    objectData.id = (await sql.maxID(table)) + 1;
+    console.log(objectData);
 
-// Display a table after querying it
-// TODO: Break this into two functions, one that async returns a query, and another that renders the data
-const getTable = (table, callback) => {
-    const connection = mysql2.createConnection(SQL_CONFIG);
-    
-    connection.query(`SELECT * FROM ${table}`, (_err, results) => {
-        connection.end();
-
-        callback(_err, results);
-    });
+    // Insert the object into the database
+    sql.insert(table, objectData);
 }
 
 // TODO: Rename this function
@@ -35,39 +25,38 @@ const getTable = (table, callback) => {
 const performAction = async (action) => {
     switch (action) {
         case "View all Departments":
-            getTable("department", displayTable);
+            sql.displayTable("department");
             break;
         case "View all Roles":
-            getTable("role", displayTable);
+            sql.displayTable("role");
             break;
         case "View all Employees":
-            getTable("employee", displayTable);
+            sql.displayTable("employee");
             break;
         case "Add a Department":
-            console.log("Not yet implmented..."); // TODO: Implement this
+            await addNew("department");
             break;
         case "Add a Role":
-            console.log("Not yet implmented..."); // TODO: Implement this
+            await addNew("role");
             break;
         case "Add an Employee":
-            console.log("Not yet implmented..."); // TODO: Implement this
-            // let employeeData = await prompt(employeeQuestions);
-            // console.log(employeeData);
+            await addNew("employee");
             break;
         case "Update an Employee Role":
-            console.log("Not yet implmented..."); // TODO: Implement this
+            console.log("Not yet implemented..."); // TODO: Implement this
             break;
         default:
             break;
     }
 }
 
- const init = async () => {
+/* == MAIN == */
+const init = async () => {
     let action;
 
     while (action != "Exit") {
-        action = (await prompt(actionQuestions)).action;
-        performAction(action);
+        action = (await prompt(Questions.main)).action;
+        await performAction(action);
     }
 }
 
