@@ -5,6 +5,9 @@
   "main": "index.js",
   "type": "module",
   "keywords": [],
+  "scripts": {
+    "seed": "node db/reset.js"
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
